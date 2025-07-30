@@ -5,6 +5,7 @@ import axios from 'axios';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
+
   if (!session?.accessToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -23,16 +24,20 @@ export default async function handler(req, res) {
           timeMax: dayEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
+          showDeleted: false,
         },
       }
     );
 
-    const events = calendarRes.data.items || [];
+    const events = (calendarRes.data.items || []).filter((event) => {
+      const eventStart = event.start.dateTime || event.start.date;
+      return eventStart && eventStart.startsWith(selectedDate);
+    });
 
     const prompt = `
 You are an AI calendar assistant. Summarize the user's schedule for ${selectedDate} based on this event list.
 - Start with a quick overview of how busy or free the day is.
-- Mention the most important events (title + time).
+- Mention key events (title + time).
 - Suggest time gaps where they can do focused work.
 - Point out any back-to-back or overlapping events that may be stressful or need adjusting.
 
@@ -62,4 +67,5 @@ ${JSON.stringify(events, null, 2)}
     res.status(500).json({ error: 'Failed to summarize events' });
   }
 }
+
 
