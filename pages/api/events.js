@@ -17,8 +17,14 @@ export default async function handler(req, res) {
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
         params: {
-          timeMin: new Date().toISOString(),
-          timeMax: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
+          const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+const dayStart = new Date(`${selectedDate}T00:00:00`);
+const dayEnd = new Date(`${selectedDate}T23:59:59`);
+
+params: {
+  timeMin: dayStart.toISOString(),
+  timeMax: dayEnd.toISOString(),
+
           singleEvents: true,
           orderBy: 'startTime',
         },
