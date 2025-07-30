@@ -1,7 +1,12 @@
-// pages/api/assistant.js
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import axios from 'axios';
+
+const getLocalDateString = (date = new Date()) => {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+};
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -11,7 +16,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const selectedDate = req.query.date || getLocalDateString();
     const dayStart = new Date(`${selectedDate}T00:00:00`);
     const dayEnd = new Date(`${selectedDate}T23:59:59`);
 
@@ -67,5 +72,6 @@ ${JSON.stringify(events, null, 2)}
     res.status(500).json({ error: 'Failed to summarize events' });
   }
 }
+
 
 
