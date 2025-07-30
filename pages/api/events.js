@@ -12,19 +12,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dayStart = new Date(`${selectedDate}T00:00:00`);
+    const dayEnd = new Date(`${selectedDate}T23:59:59`);
+
     const calendarRes = await axios.get(
       'https://www.googleapis.com/calendar/v3/calendars/primary/events',
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
         params: {
-          const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-const dayStart = new Date(`${selectedDate}T00:00:00`);
-const dayEnd = new Date(`${selectedDate}T23:59:59`);
-
-params: {
-  timeMin: dayStart.toISOString(),
-  timeMax: dayEnd.toISOString(),
-
+          timeMin: dayStart.toISOString(),
+          timeMax: dayEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
         },
@@ -37,5 +35,6 @@ params: {
     res.status(500).json({ error: 'Failed to fetch events from Google Calendar' });
   }
 }
+
 
 
