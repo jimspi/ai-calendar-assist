@@ -9,9 +9,15 @@ export default function Home() {
   const [aiSummary, setAiSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  const getLocalDateString = (dateObj = new Date()) => {
+    return new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
+  };
+
   const setToday = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    setSelectedDate(today);
+    const localDate = getLocalDateString();
+    setSelectedDate(localDate);
   };
 
   useEffect(() => {
@@ -114,6 +120,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 
 
