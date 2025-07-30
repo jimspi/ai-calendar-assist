@@ -1,4 +1,3 @@
-// pages/index.js
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Calendar } from 'lucide-react';
@@ -6,22 +5,23 @@ import { Calendar } from 'lucide-react';
 export default function Home() {
   const { data: session } = useSession();
   const [events, setEvents] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [aiSummary, setAiSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
 
   useEffect(() => {
-    if (session) {
-      fetch('/api/events')
-        .then(res => res.json())
-        .then(data => {
-          if (data.events) setEvents(data.events);
-        });
-    }
-  }, [session]);
+    if (!session || !selectedDate) return;
+
+    fetch(`/api/events?date=${selectedDate}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.events) setEvents(data.events);
+      });
+  }, [session, selectedDate]);
 
   const fetchSummary = async () => {
     setLoadingSummary(true);
-    const res = await fetch('/api/assistant');
+    const res = await fetch(`/api/assistant?date=${selectedDate}`);
     const data = await res.json();
     setAiSummary(data.summary);
     setLoadingSummary(false);
@@ -50,40 +50,57 @@ export default function Home() {
             Sign out
           </button>
 
-          {events.length === 0 ? (
-            <p>No events for today 🎉</p>
+          <div className="mb-4">
+            <label className="mr-2">Pick a date:</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="text-black px-2 py-1 rounded"
+            />
+          </div>
+
+          {selectedDate && events.length === 0 ? (
+            <p>No events found for this date.</p>
           ) : (
-            <div className="text-left bg-white text-black p-4 rounded-xl">
-              <h2 className="text-lg font-bold mb-2">Today's Events:</h2>
-              <ul>
-                {events.map(event => (
-                  <li key={event.id} className="mb-2">
-                    <strong>{event.summary || 'No Title'}</strong><br />
-                    {event.start?.dateTime?.slice(11, 16)} - {event.end?.dateTime?.slice(11, 16)}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            events.length > 0 && (
+              <div className="text-left bg-white text-black p-4 rounded-xl">
+                <h2 className="text-lg font-bold mb-2">Events on {selectedDate}:</h2>
+                <ul>
+                  {events.map(event => (
+                    <li key={event.id} className="mb-2">
+                      <strong>{event.summary || 'No Title'}</strong><br />
+                      {event.start?.dateTime?.slice(11, 16)} - {event.end?.dateTime?.slice(11, 16)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
           )}
 
-          <button
-            onClick={fetchSummary}
-            className="bg-blue-500 text-white py-2 px-4 rounded-xl hover:bg-blue-600 transition mt-6"
-          >
-            Generate AI Summary
-          </button>
+          {selectedDate && (
+            <>
+              <button
+                onClick={fetchSummary}
+                className="bg-blue-500 text-white py-2 px-4 rounded-xl hover:bg-blue-600 transition mt-6"
+              >
+                Generate AI Summary
+              </button>
 
-          {loadingSummary && <p className="mt-4">Summarizing your day...</p>}
+              {loadingSummary && <p className="mt-4">Summarizing your day...</p>}
 
-          {aiSummary && (
-            <div className="bg-black/20 mt-4 p-4 rounded-xl text-left">
-              <h3 className="text-lg font-bold mb-2">AI Assistant Summary:</h3>
-              <p>{aiSummary}</p>
-            </div>
+              {aiSummary && (
+                <div className="bg-black/20 mt-4 p-4 rounded-xl text-left">
+                  <h3 className="text-lg font-bold mb-2">AI Assistant Summary:</h3>
+                  <p>{aiSummary}</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
     </div>
   );
 }
+
 
