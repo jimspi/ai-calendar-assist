@@ -1,3 +1,4 @@
+// pages/api/assistant.js
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import axios from 'axios';
@@ -23,7 +24,9 @@ export default async function handler(req, res) {
     const calendarRes = await axios.get(
       'https://www.googleapis.com/calendar/v3/calendars/primary/events',
       {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
         params: {
           timeMin: dayStart.toISOString(),
           timeMax: dayEnd.toISOString(),
@@ -35,8 +38,16 @@ export default async function handler(req, res) {
     );
 
     const events = (calendarRes.data.items || []).filter((event) => {
-      const eventStart = event.start.dateTime || event.start.date;
-      return eventStart && eventStart.startsWith(selectedDate);
+      const start = event.start?.dateTime || event.start?.date;
+      if (!start) return false;
+
+      const eventDate = new Date(start);
+      const userOffset = new Date().getTimezoneOffset(); // in minutes
+      const normalized = new Date(eventDate.getTime() - userOffset * 60000)
+        .toISOString()
+        .slice(0, 10);
+
+      return normalized === selectedDate;
     });
 
     const prompt = `
@@ -72,6 +83,7 @@ ${JSON.stringify(events, null, 2)}
     res.status(500).json({ error: 'Failed to summarize events' });
   }
 }
+
 
 
 
