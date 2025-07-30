@@ -10,34 +10,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Step 1: Get today’s calendar events
-    const eventsRes = await axios.get(
+    const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const dayStart = new Date(`${selectedDate}T00:00:00`);
+    const dayEnd = new Date(`${selectedDate}T23:59:59`);
+
+    const calendarRes = await axios.get(
       'https://www.googleapis.com/calendar/v3/calendars/primary/events',
       {
         headers: { Authorization: `Bearer ${session.accessToken}` },
         params: {
-          timeMin: new Date().toISOString(),
-          timeMax: new Date(new Date().setHours(23, 59, 59, 999)).toISOString(),
+          timeMin: dayStart.toISOString(),
+          timeMax: dayEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
         },
       }
     );
 
-    const events = eventsRes.data.items;
+    const events = calendarRes.data.items || [];
 
-    // Step 2: Create summary prompt
     const prompt = `
-You are an AI calendar assistant. Given this list of today's events, summarize the user's day in plain English.
-Then suggest any gaps where they could focus without interruptions.
-Finally, point out any back-to-back events that might need rescheduling.
-Only include what's useful. Avoid fluff.
+You are an AI calendar assistant. Summarize the user's schedule for ${selectedDate} based on this event list.
+- Start with a quick overview of how busy or free the day is.
+- Mention the most important events (title + time).
+- Suggest time gaps where they can do focused work.
+- Point out any back-to-back or overlapping events that may be stressful or need adjusting.
 
-Events JSON:
+Calendar events (JSON):
 ${JSON.stringify(events, null, 2)}
 `;
 
-    // Step 3: Send to OpenAI
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -52,11 +54,12 @@ ${JSON.stringify(events, null, 2)}
     });
 
     const result = await aiResponse.json();
-    const summary = result.choices?.[0]?.message?.content || 'AI summary unavailable';
+    const summary = result.choices?.[0]?.message?.content || 'No summary available.';
 
     res.status(200).json({ summary });
-  } catch (err) {
-    console.error('AI Assistant error:', err);
+  } catch (error) {
+    console.error('AI Assistant error:', error?.response?.data || error.message);
     res.status(500).json({ error: 'Failed to summarize events' });
   }
 }
+
