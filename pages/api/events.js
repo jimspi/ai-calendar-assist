@@ -25,16 +25,19 @@ export default async function handler(req, res) {
           timeMax: dayEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
+          showDeleted: false,
         },
       }
     );
 
-    res.status(200).json({ events: calendarRes.data.items });
+    const events = (calendarRes.data.items || []).filter((event) => {
+      const eventStart = event.start.dateTime || event.start.date;
+      return eventStart && eventStart.startsWith(selectedDate);
+    });
+
+    res.status(200).json({ events });
   } catch (error) {
     console.error('Error fetching Google Calendar events:', error?.response?.data || error.message);
     res.status(500).json({ error: 'Failed to fetch events from Google Calendar' });
   }
 }
-
-
-
