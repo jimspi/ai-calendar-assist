@@ -39,7 +39,8 @@ export default async function handler(req, res) {
       return eventStart && eventStart.startsWith(selectedDate);
     });
 
-    res.status(200).json({ events });
+    console.log('🟡 Raw Google Calendar items:', calendarRes.data.items);
+res.status(200).json({ events: calendarRes.data.items });
   } catch (error) {
     console.error('Error fetching Google Calendar events:', error?.response?.data || error.message);
     res.status(500).json({ error: 'Failed to fetch events from Google Calendar' });
