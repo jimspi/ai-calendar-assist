@@ -9,6 +9,11 @@ export default function Home() {
   const [aiSummary, setAiSummary] = useState('');
   const [loadingSummary, setLoadingSummary] = useState(false);
 
+  const setToday = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    setSelectedDate(today);
+  };
+
   useEffect(() => {
     if (!session || !selectedDate) return;
 
@@ -50,6 +55,13 @@ export default function Home() {
             Sign out
           </button>
 
+          <button
+            onClick={setToday}
+            className="bg-green-500 text-white py-2 px-4 rounded-xl hover:bg-green-600 transition mb-4"
+          >
+            Show Today's Events
+          </button>
+
           <div className="mb-4">
             <label className="mr-2">Pick a date:</label>
             <input
@@ -70,7 +82,7 @@ export default function Home() {
                   {events.map(event => (
                     <li key={event.id} className="mb-2">
                       <strong>{event.summary || 'No Title'}</strong><br />
-                      {event.start?.dateTime?.slice(11, 16)} - {event.end?.dateTime?.slice(11, 16)}
+                      {event.start?.dateTime?.slice(11, 16) || 'All day'} - {event.end?.dateTime?.slice(11, 16) || ''}
                     </li>
                   ))}
                 </ul>
@@ -102,5 +114,6 @@ export default function Home() {
     </div>
   );
 }
+
 
 
