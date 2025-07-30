@@ -1,18 +1,22 @@
-// pages/api/events.js
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
 import axios from 'axios';
+
+const getLocalDateString = (date = new Date()) => {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+};
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
 
   if (!session?.accessToken) {
-    console.error('No access token found in session');
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
-    const selectedDate = req.query.date || new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const selectedDate = req.query.date || getLocalDateString();
     const dayStart = new Date(`${selectedDate}T00:00:00`);
     const dayEnd = new Date(`${selectedDate}T23:59:59`);
 
@@ -41,3 +45,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to fetch events from Google Calendar' });
   }
 }
+
